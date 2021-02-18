@@ -181,19 +181,20 @@ function autosavedrafts_xmlhttp()
 
 	// Sort out the message's type
 	if ($mybb->input['fid']) {
-		$key = 'thread_' . $mybb->input['fid'];
+		$key = 'thread_' . $mybb->get_input('fid', \MyBB::INPUT_INT);
 	}
 	else if ($mybb->input['tid']) {
-		$key = 'post_' . $mybb->input['tid'];
+		$key = 'post_' . $mybb->get_input('tid', \MyBB::INPUT_INT);
 	}
 	else {
 		echo 2;
 		return;
 	}
 
+	// data should be raw saved, but this is to be fixed later
 	$new_thread = array(
-		'subject' => htmlspecialchars_uni($mybb->input['subject']),
-		'message' => htmlspecialchars_uni($mybb->input['message']),
+		'subject' => $db->escape_string(htmlspecialchars_uni($mybb->input['subject'])),
+		'message' => $db->escape_string(htmlspecialchars_uni($mybb->input['message'])),
 		'dateline' => TIME_NOW
 	);
 
@@ -235,7 +236,7 @@ function autosavedrafts_xmlhttp()
 			global $db;
 
 			// Add uid & type
-			$new_thread['uid'] = $mybb->user['uid'];
+			$new_thread['uid'] = (int) $mybb->user['uid'];
 			$new_thread['type'] = $key;
 
 			// No SQL Injections should pass!
@@ -299,6 +300,8 @@ function autosavedrafts_usercp_drafts()
 
 	}
 	else if ($mybb->settings['autosavedrafts_engine'] == 2) {
+
+		$mybb->user['uid'] = (int) $mybb->user['uid'];
 
 		$query = $db->simple_select('autosaved_drafts', '*', "uid = {$mybb->user['uid']}");
 
@@ -424,6 +427,8 @@ function autosavedrafts_load_draft()
 
 		global $db;
 
+		$mybb->user['uid'] = (int) $mybb->user['uid'];
+
 		$query = $db->simple_select('autosaved_drafts', 'subject, message', "type = '$key' AND uid = {$mybb->user['uid']}", array(
 			'limit' => 1
 		));
@@ -449,10 +454,10 @@ function autosavedrafts_delete_drafts_on_submit()
 	global $mybb, $thread, $forum, $autosaved_drafts;
 
 	if (THIS_SCRIPT == 'newreply.php' and $thread['tid']) {
-		$key = 'post_' . $thread['tid'];
+		$key = 'post_' . (int) $thread['tid'];
 	}
 	else if (THIS_SCRIPT == 'newthread.php' and $forum['fid']) {
-		$key = 'thread_' . $forum['fid'];
+		$key = 'thread_' . (int) $forum['fid'];
 	}
 
 	if ($mybb->settings['autosavedrafts_engine'] == 1) {
@@ -478,6 +483,8 @@ function autosavedrafts_delete_drafts_on_submit()
 	else if ($mybb->settings['autosavedrafts_engine'] == 2) {
 
 		global $db;
+
+		$mybb->user['uid'] = (int) $mybb->user['uid'];
 
 		$db->delete_query('autosaved_drafts', "type = '$key' AND uid = {$mybb->user['uid']}");
 
@@ -519,6 +526,8 @@ function autosavedrafts_delete_drafts()
 		else if ($mybb->settings['autosavedrafts_engine'] == 2) {
 
 			global $db;
+
+			$mybb->user['uid'] = (int) $mybb->user['uid'];
 
 			$db->delete_query('autosaved_drafts', "type = '$key' AND uid = {$mybb->user['uid']}");
 
@@ -597,6 +606,8 @@ function autosavedrafts_load_scripts(&$content)
 		else if ($mybb->settings['autosavedrafts_engine'] == 2) {
 
 			global $db;
+
+			$mybb->user['uid'] = (int) $mybb->user['uid'];
 
 			$query = $db->simple_select('autosaved_drafts', '*', "type = '$tempkey' AND uid = {$mybb->user['uid']}", array(
 				'limit' => 1
